@@ -1,1 +1,75 @@
 
+name: Cubie A5E Custom Firmware
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build OpenWrt for Cubie A5E
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            zstd \
+            xz-utils \
+            curl \
+            wget \
+            make
+
+      - name: Download OpenWrt ImageBuilder
+        run: |
+          wget -O imagebuilder.tar.zst \
+          https://downloads.openwrt.org/snapshots/targets/sunxi/cortexa53/openwrt-imagebuilder-sunxi-cortexa53.Linux-x86_64.tar.zst
+
+          mkdir imagebuilder
+
+          tar --zstd -xf imagebuilder.tar.zst \
+            -C imagebuilder --strip-components=1
+
+      - name: Verify Cubie A5E profile
+        working-directory: imagebuilder
+        run: |
+          make info | tee ../profiles.txt
+
+          grep -i "radxa_cubie-a5e" ../profiles.txt
+
+      - name: Build firmware
+        working-directory: imagebuilder
+        run: |
+          PACKAGES="$(grep -v '^[[:space:]]*#' ../config/packages.txt | tr '\n' ' ')"
+
+          make image \
+            PROFILE="radxa_cubie-a5e" \
+            PACKAGES="$PACKAGES"
+
+      - name: List firmware
+        run: |
+          find imagebuilder/bin/targets \
+            -type f -name '*radxa_cubie-a5e*'
+
+      - name: Generate checksums
+        run: |
+          cd imagebuilder/bin/targets/sunxi/cortexa53
+          sha256sum *radxa_cubie-a5e* > SHA256SUMS.txt
+
+      - name: Upload firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: Cubie-A5E-OpenWrt
+          path: |
+            imagebuilder/bin/targets/sunxi/cortexa53/*radxa_cubie-a5e*
+            imagebuilder/bin/targets/sunxi/cortexa53/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 14
