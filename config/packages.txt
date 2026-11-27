@@ -1,0 +1,17 @@
+
+luci
+luci-ssl
+luci-app-firewall
+wpad-basic-mbedtls
+iw
+iwinfo
+ethtool
+tcpdump
+curl
+wget-ssl
+ca-bundle
+block-mount
+e2fsprogs
+fdisk
+htop
+nano
