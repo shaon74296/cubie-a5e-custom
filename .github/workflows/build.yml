@@ -1,13 +1,15 @@
 
 name: Cubie A5E Firmware Build
 
-on:
+'on':
   workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/build.yml'
 
 jobs:
   prepare:
     runs-on: ubuntu-22.04
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
